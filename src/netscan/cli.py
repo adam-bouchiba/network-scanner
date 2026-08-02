@@ -3,8 +3,12 @@ import sys
 import time
 import json
 
-from netscan.scanner import get_service_name, resolve_target, scan_ports
-
+from netscan.scanner import (
+    get_service_name,
+    grab_banner,
+    resolve_target,
+    scan_ports,
+)
 
 DEFAULT_PORTS = list(range(1, 1001))
 
@@ -108,6 +112,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+    "--banners",
+    action="store_true",
+    help="Tente de récupérer les bannières des services ouverts.",
+    )
+
+    parser.add_argument(
     "--json",
     dest="json_output",
     metavar="FILE",
@@ -122,10 +132,12 @@ def export_json(
     ip_address: str,
     results: dict[int, bool],
     duration: float,
+    banners: dict[int, str | None] | None = None,
 ) -> None:
     """
     Exporte les résultats du scan dans un fichier JSON.
     """
+    banners = banners or {}
     open_ports = []
 
     for port, is_open in results.items():
@@ -137,6 +149,7 @@ def export_json(
                 "port": port,
                 "status": "open",
                 "service": get_service_name(port),
+                "banner": banners.get(port),
             }
         )
 
@@ -190,8 +203,25 @@ def main() -> int:
     duration = time.perf_counter() - started_at
     open_ports = 0
 
-    print(f"{'PORT':<10}{'STATUS':<12}{'SERVICE'}")
-    print("-" * 34)
+    banners: dict[int, str | None] = {}
+
+    if arguments.banners:
+        print("Collecting service banners...\n")
+
+        for port, is_open in results.items():
+            if is_open:
+                banners[port] = grab_banner(
+                    ip_address=ip_address,
+                    port=port,
+                    timeout=max(arguments.timeout, 1.0),
+                )
+
+    if arguments.banners:
+        print(f"{'PORT':<10}{'STATUS':<12}{'SERVICE':<16}{'BANNER'}")
+        print("-" * 78)
+    else:
+        print(f"{'PORT':<10}{'STATUS':<12}{'SERVICE'}")
+        print("-" * 34)
 
     for port, is_open in results.items():
         if not is_open and not arguments.show_closed:
@@ -203,7 +233,11 @@ def main() -> int:
         if is_open:
             open_ports += 1
 
-        print(f"{port:<10}{status:<12}{service}")
+        if arguments.banners:
+            banner = banners.get(port) or "-"
+            print(f"{port:<10}{status:<12}{service:<16}{banner}")
+        else:
+            print(f"{port:<10}{status:<12}{service}")
 
     if open_ports == 0:
         print("No open ports found in the selected range.")
@@ -221,11 +255,16 @@ def main() -> int:
                 ip_address=ip_address,
                 results=results,
                 duration=duration,
+                banners=banners,
             )
-            print(f"Results exported to {arguments.json_output}")
-        except Exception as error:
-            print(f"Failed to export JSON: {error}", file=sys.stderr)
+        except OSError as error:
+            print(
+                f"Error: unable to write JSON file: {error}",
+                file=sys.stderr,
+            )
             return 1
+
+        print(f"JSON report saved to: {arguments.json_output}")
 
     return 0
 

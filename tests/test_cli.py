@@ -29,17 +29,19 @@ def test_export_json_creates_expected_report(tmp_path) -> None:
     assert report["duration_seconds"] == 0.457
 
     assert report["open_ports"] == [
-        {
-            "port": 22,
-            "status": "open",
-            "service": "SSH",
-        },
-        {
-            "port": 443,
-            "status": "open",
-            "service": "HTTPS",
-        },
-    ]
+    {
+        "port": 22,
+        "status": "open",
+        "service": "SSH",
+        "banner": None,
+    },
+    {
+        "port": 443,
+        "status": "open",
+        "service": "HTTPS",
+        "banner": None,
+    },
+]
 
 def test_parse_single_ports() -> None:
     result = parse_ports("22,80,443")

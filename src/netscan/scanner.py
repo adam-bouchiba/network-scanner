@@ -58,6 +58,52 @@ def scan_port(ip_address: str, port: int, timeout: float = 0.5) -> bool:
 
     return result == 0
 
+def grab_banner(
+    ip_address: str,
+    port: int,
+    timeout: float = 1.0,
+) -> str | None:
+    """
+    Tente de récupérer la bannière d'un service TCP.
+
+    Retourne une chaîne nettoyée si une bannière est reçue,
+    sinon None.
+    """
+    if not 1 <= port <= 65535:
+        raise ValueError("Le port doit être compris entre 1 et 65535.")
+
+    try:
+        with socket.create_connection(
+            (ip_address, port),
+            timeout=timeout,
+        ) as client_socket:
+            client_socket.settimeout(timeout)
+
+            if port in {80, 8080, 8000, 8888}:
+                request = (
+                    f"HEAD / HTTP/1.1\r\n"
+                    f"Host: {ip_address}\r\n"
+                    f"Connection: close\r\n\r\n"
+                )
+                client_socket.sendall(request.encode("ascii"))
+
+            banner = client_socket.recv(1024)
+
+    except (OSError, TimeoutError):
+        return None
+
+    if not banner:
+        return None
+
+    decoded_banner = banner.decode(
+        "utf-8",
+        errors="replace",
+    )
+
+    cleaned_banner = " ".join(decoded_banner.split())
+
+    return cleaned_banner[:200] or None
+
 def scan_ports(
     ip_address: str,
     ports: list[int],

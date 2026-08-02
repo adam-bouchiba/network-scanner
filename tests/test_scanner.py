@@ -5,10 +5,63 @@ import pytest
 
 from netscan.scanner import (
     get_service_name,
+    grab_banner,
     resolve_target,
     scan_port,
     scan_ports,
 )
+
+@patch("netscan.scanner.socket.create_connection")
+def test_grab_banner_returns_received_banner(
+    mock_create_connection: MagicMock,
+) -> None:
+    mock_socket = mock_create_connection.return_value.__enter__.return_value
+    mock_socket.recv.return_value = b"SSH-2.0-OpenSSH_9.6\r\n"
+
+    result = grab_banner(
+        ip_address="127.0.0.1",
+        port=22,
+        timeout=1.0,
+    )
+
+    assert result == "SSH-2.0-OpenSSH_9.6"
+    mock_socket.recv.assert_called_once_with(1024)
+
+
+@patch("netscan.scanner.socket.create_connection")
+def test_grab_banner_sends_http_head_request(
+    mock_create_connection: MagicMock,
+) -> None:
+    mock_socket = mock_create_connection.return_value.__enter__.return_value
+    mock_socket.recv.return_value = (
+        b"HTTP/1.1 200 OK\r\nServer: nginx\r\n\r\n"
+    )
+
+    result = grab_banner(
+        ip_address="127.0.0.1",
+        port=80,
+    )
+
+    assert result == "HTTP/1.1 200 OK Server: nginx"
+
+    sent_request = mock_socket.sendall.call_args.args[0]
+
+    assert b"HEAD / HTTP/1.1" in sent_request
+    assert b"Connection: close" in sent_request
+
+
+@patch("netscan.scanner.socket.create_connection")
+def test_grab_banner_returns_none_on_connection_error(
+    mock_create_connection: MagicMock,
+) -> None:
+    mock_create_connection.side_effect = OSError
+
+    result = grab_banner(
+        ip_address="127.0.0.1",
+        port=22,
+    )
+
+    assert result is None   
 
 
 def test_get_service_name_for_known_port() -> None:
