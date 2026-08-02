@@ -1,4 +1,5 @@
 import socket
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 COMMON_SERVICES = {
     21: "FTP",
@@ -60,21 +61,35 @@ def scan_port(ip_address: str, port: int, timeout: float = 0.5) -> bool:
 def scan_ports(
     ip_address: str,
     ports: list[int],
-    timeout: float = 0.5
+    timeout: float = 0.5,
+    workers: int = 50,
 ) -> dict[int, bool]:
     """
-    Scanne plusieurs ports TCP sur une adresse IP.
+    Scanne plusieurs ports TCP en parallèle.
 
-    Retourne un dictionnaire :
-    {
-        80: True,
-        443: True,
-        8080: False
-    }
+    Args:
+        ip_address: Adresse IP à scanner.
+        ports: Liste des ports TCP.
+        timeout: Temps maximal d'attente par port.
+        workers: Nombre maximal de threads simultanés.
+
+    Returns:
+        Un dictionnaire associant chaque port à son état.
     """
-    results = {}
+    results: dict[int, bool] = {}
 
-    for port in ports:
-        results[port] = scan_port(ip_address, port, timeout)
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        future_to_port = {
+            executor.submit(scan_port, ip_address, port, timeout): port
+            for port in ports
+        }
 
-    return results
+        for future in as_completed(future_to_port):
+            port = future_to_port[future]
+
+            try:
+                results[port] = future.result()
+            except OSError:
+                results[port] = False
+
+    return dict(sorted(results.items()))
