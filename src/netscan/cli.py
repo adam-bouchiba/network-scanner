@@ -2,6 +2,7 @@ import argparse
 import sys
 import time
 import json
+from netscan.models import ScanResult
 
 from netscan.scanner import (
     get_service_name,
@@ -130,36 +131,28 @@ def export_json(
     file_path: str,
     target: str,
     ip_address: str,
-    results: dict[int, bool],
+    results: list[ScanResult],
     duration: float,
-    banners: dict[int, str | None] | None = None,
 ) -> None:
     """
     Exporte les résultats du scan dans un fichier JSON.
     """
-    banners = banners or {}
-    open_ports = []
-
-    for port, is_open in results.items():
-        if not is_open:
-            continue
-
-        open_ports.append(
-            {
-                "port": port,
-                "status": "open",
-                "service": get_service_name(port),
-                "banner": banners.get(port),
-            }
-        )
+    open_results = [
+        result
+        for result in results
+        if result.is_open
+    ]
 
     report = {
         "target": target,
         "ip_address": ip_address,
         "duration_seconds": round(duration, 3),
         "ports_scanned": len(results),
-        "open_ports_count": len(open_ports),
-        "open_ports": open_ports,
+        "open_ports_count": len(open_results),
+        "open_ports": [
+            result.to_dict()
+            for result in open_results
+        ],
     }
 
     with open(file_path, "w", encoding="utf-8") as json_file:
@@ -195,6 +188,7 @@ def main() -> int:
             ports=arguments.ports,
             timeout=arguments.timeout,
             workers=arguments.workers,
+            collect_banners=arguments.banners,
         )
     except KeyboardInterrupt:
         print("\nScan interrupted by user.", file=sys.stderr)
@@ -203,18 +197,6 @@ def main() -> int:
     duration = time.perf_counter() - started_at
     open_ports = 0
 
-    banners: dict[int, str | None] = {}
-
-    if arguments.banners:
-        print("Collecting service banners...\n")
-
-        for port, is_open in results.items():
-            if is_open:
-                banners[port] = grab_banner(
-                    ip_address=ip_address,
-                    port=port,
-                    timeout=max(arguments.timeout, 1.0),
-                )
 
     if arguments.banners:
         print(f"{'PORT':<10}{'STATUS':<12}{'SERVICE':<16}{'BANNER'}")
@@ -223,21 +205,27 @@ def main() -> int:
         print(f"{'PORT':<10}{'STATUS':<12}{'SERVICE'}")
         print("-" * 34)
 
-    for port, is_open in results.items():
-        if not is_open and not arguments.show_closed:
+    for result in results:
+        if not result.is_open and not arguments.show_closed:
             continue
 
-        status = "OPEN" if is_open else "CLOSED"
-        service = get_service_name(port)
-
-        if is_open:
+        if result.is_open:
             open_ports += 1
 
         if arguments.banners:
-            banner = banners.get(port) or "-"
-            print(f"{port:<10}{status:<12}{service:<16}{banner}")
+            banner = result.banner or "-"
+            print(
+                f"{result.port:<10}"
+                f"{result.status.upper():<12}"
+                f"{result.service:<16}"
+                f"{banner}"
+            )
         else:
-            print(f"{port:<10}{status:<12}{service}")
+            print(
+                f"{result.port:<10}"
+                f"{result.status.upper():<12}"
+                f"{result.service}"
+            )
 
     if open_ports == 0:
         print("No open ports found in the selected range.")
@@ -255,7 +243,6 @@ def main() -> int:
                 ip_address=ip_address,
                 results=results,
                 duration=duration,
-                banners=banners,
             )
         except OSError as error:
             print(

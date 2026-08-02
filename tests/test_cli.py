@@ -1,7 +1,7 @@
 import argparse
 import json
 import pytest
-
+from netscan.models import ScanResult
 from netscan.cli import export_json, parse_ports
 
 def test_export_json_creates_expected_report(tmp_path) -> None:
@@ -11,11 +11,24 @@ def test_export_json_creates_expected_report(tmp_path) -> None:
         file_path=str(output_file),
         target="localhost",
         ip_address="127.0.0.1",
-        results={
-            22: True,
-            80: False,
-            443: True,
-        },
+        results=[
+    ScanResult(
+        port=22,
+        is_open=True,
+        service="SSH",
+        banner="SSH-2.0-OpenSSH_9.6",
+    ),
+    ScanResult(
+        port=80,
+        is_open=False,
+        service="HTTP",
+    ),
+    ScanResult(
+        port=443,
+        is_open=True,
+        service="HTTPS",
+    ),
+],
         duration=0.4567,
     )
 
@@ -31,15 +44,15 @@ def test_export_json_creates_expected_report(tmp_path) -> None:
     assert report["open_ports"] == [
     {
         "port": 22,
-        "status": "open",
         "service": "SSH",
-        "banner": None,
+        "banner": "SSH-2.0-OpenSSH_9.6",
+        "status": "open",
     },
     {
         "port": 443,
-        "status": "open",
         "service": "HTTPS",
         "banner": None,
+        "status": "open",
     },
 ]
 

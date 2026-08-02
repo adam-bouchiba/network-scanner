@@ -145,17 +145,29 @@ def test_scan_port_returns_false_when_connection_fails(
 def test_scan_ports_returns_sorted_results(
     mock_scan_port: MagicMock,
 ) -> None:
-    mock_scan_port.side_effect = lambda ip, port, timeout: port in {22, 443}
+    mock_scan_port.side_effect = (
+        lambda ip, port, timeout: port in {22, 443}
+    )
 
-    result = scan_ports(
+    results = scan_ports(
         ip_address="127.0.0.1",
         ports=[443, 80, 22],
         timeout=0.1,
         workers=2,
     )
 
-    assert result == {
-        22: True,
-        80: False,
-        443: True,
-    }
+    assert [result.port for result in results] == [
+        22,
+        80,
+        443,
+    ]
+
+    assert [result.is_open for result in results] == [
+        True,
+        False,
+        True,
+    ]
+
+    assert results[0].service == "SSH"
+    assert results[1].service == "HTTP"
+    assert results[2].service == "HTTPS"

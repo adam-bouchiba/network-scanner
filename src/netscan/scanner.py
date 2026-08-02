@@ -1,5 +1,6 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from netscan.models import ScanResult
 
 COMMON_SERVICES = {
     21: "FTP",
@@ -109,24 +110,29 @@ def scan_ports(
     ports: list[int],
     timeout: float = 0.5,
     workers: int = 50,
-) -> dict[int, bool]:
+    collect_banners: bool = False,
+) -> list[ScanResult]:
     """
     Scanne plusieurs ports TCP en parallèle.
 
-    Args:
-        ip_address: Adresse IP à scanner.
-        ports: Liste des ports TCP.
-        timeout: Temps maximal d'attente par port.
-        workers: Nombre maximal de threads simultanés.
-
-    Returns:
-        Un dictionnaire associant chaque port à son état.
+    Retourne une liste de résultats structurés.
     """
-    results: dict[int, bool] = {}
+    if timeout <= 0:
+        raise ValueError("Le timeout doit être supérieur à zéro.")
+
+    if workers <= 0:
+        raise ValueError("Le nombre de workers doit être supérieur à zéro.")
+
+    port_states: dict[int, bool] = {}
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
         future_to_port = {
-            executor.submit(scan_port, ip_address, port, timeout): port
+            executor.submit(
+                scan_port,
+                ip_address,
+                port,
+                timeout,
+            ): port
             for port in ports
         }
 
@@ -134,8 +140,31 @@ def scan_ports(
             port = future_to_port[future]
 
             try:
-                results[port] = future.result()
+                port_states[port] = future.result()
             except OSError:
-                results[port] = False
+                port_states[port] = False
 
-    return dict(sorted(results.items()))
+    results = []
+
+    for port in sorted(port_states):
+        is_open = port_states[port]
+
+        banner = None
+
+        if is_open and collect_banners:
+            banner = grab_banner(
+                ip_address=ip_address,
+                port=port,
+                timeout=max(timeout, 1.0),
+            )
+
+        results.append(
+            ScanResult(
+                port=port,
+                is_open=is_open,
+                service=get_service_name(port),
+                banner=banner,
+            )
+        )
+
+    return results
