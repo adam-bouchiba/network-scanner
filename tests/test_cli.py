@@ -1,9 +1,45 @@
 import argparse
-
+import json
 import pytest
 
-from netscan.cli import parse_ports
+from netscan.cli import export_json, parse_ports
 
+def test_export_json_creates_expected_report(tmp_path) -> None:
+    output_file = tmp_path / "scan.json"
+
+    export_json(
+        file_path=str(output_file),
+        target="localhost",
+        ip_address="127.0.0.1",
+        results={
+            22: True,
+            80: False,
+            443: True,
+        },
+        duration=0.4567,
+    )
+
+    with output_file.open(encoding="utf-8") as json_file:
+        report = json.load(json_file)
+
+    assert report["target"] == "localhost"
+    assert report["ip_address"] == "127.0.0.1"
+    assert report["ports_scanned"] == 3
+    assert report["open_ports_count"] == 2
+    assert report["duration_seconds"] == 0.457
+
+    assert report["open_ports"] == [
+        {
+            "port": 22,
+            "status": "open",
+            "service": "SSH",
+        },
+        {
+            "port": 443,
+            "status": "open",
+            "service": "HTTPS",
+        },
+    ]
 
 def test_parse_single_ports() -> None:
     result = parse_ports("22,80,443")
@@ -62,3 +98,5 @@ def test_parse_ports_rejects_out_of_range_values(value: str) -> None:
 def test_parse_ports_rejects_invalid_formats(value: str) -> None:
     with pytest.raises(argparse.ArgumentTypeError):
         parse_ports(value)
+
+

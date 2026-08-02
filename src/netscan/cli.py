@@ -1,6 +1,7 @@
 import argparse
 import sys
 import time
+import json
 
 from netscan.scanner import get_service_name, resolve_target, scan_ports
 
@@ -106,8 +107,50 @@ def build_parser() -> argparse.ArgumentParser:
         help="Affiche aussi les ports fermés.",
     )
 
+    parser.add_argument(
+    "--json",
+    dest="json_output",
+    metavar="FILE",
+    help="Exporte les résultats du scan dans un fichier JSON.",
+)
+
     return parser
 
+def export_json(
+    file_path: str,
+    target: str,
+    ip_address: str,
+    results: dict[int, bool],
+    duration: float,
+) -> None:
+    """
+    Exporte les résultats du scan dans un fichier JSON.
+    """
+    open_ports = []
+
+    for port, is_open in results.items():
+        if not is_open:
+            continue
+
+        open_ports.append(
+            {
+                "port": port,
+                "status": "open",
+                "service": get_service_name(port),
+            }
+        )
+
+    report = {
+        "target": target,
+        "ip_address": ip_address,
+        "duration_seconds": round(duration, 3),
+        "ports_scanned": len(results),
+        "open_ports_count": len(open_ports),
+        "open_ports": open_ports,
+    }
+
+    with open(file_path, "w", encoding="utf-8") as json_file:
+        json.dump(report, json_file, indent=4)
 
 def main() -> int:
     parser = build_parser()
@@ -169,6 +212,20 @@ def main() -> int:
         f"\nScan completed in {duration:.2f}s "
         f"with {open_ports} open port(s)."
     )
+
+    if arguments.json_output:
+        try:
+            export_json(
+                file_path=arguments.json_output,
+                target=arguments.target,
+                ip_address=ip_address,
+                results=results,
+                duration=duration,
+            )
+            print(f"Results exported to {arguments.json_output}")
+        except Exception as error:
+            print(f"Failed to export JSON: {error}", file=sys.stderr)
+            return 1
 
     return 0
 
