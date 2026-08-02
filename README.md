@@ -1,4 +1,5 @@
 # Network Scanner
+[![CI](https://github.com/adam-bouchiba/network-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/adam-bouchiba/network-scanner/actions/workflows/ci.yml)
 
 A fast multithreaded TCP port scanner written in Python.
 
