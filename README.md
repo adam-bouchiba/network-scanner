@@ -22,7 +22,7 @@ Network Scanner resolves hostnames, scans configurable TCP port ranges in parall
 ## Demo
 
 ```text
-$ netscan localhost -p 75-85 --show-closed
+netscan localhost -p 75-85 --show-closed
 
 Target:      localhost
 Resolved IP: 127.0.0.1
@@ -34,18 +34,19 @@ Scanning...
 PORT      STATUS      SERVICE
 ----------------------------------
 75        CLOSED      UNKNOWN
-76        CLOSED      DEOS
-77        CLOSED      PRIV-RJE
-78        CLOSED      VETTCP
+76        CLOSED      UNKNOWN
+77        CLOSED      UNKNOWN
+78        CLOSED      UNKNOWN
 79        CLOSED      FINGER
-80        OPEN        HTTP
+80        CLOSED      HTTP
 81        CLOSED      HOSTS2-NS
-82        CLOSED      XFER
-83        CLOSED      MIT-ML-DEV
-84        CLOSED      CTF
-85        CLOSED      MIT-ML-DEV
+82        CLOSED      UNKNOWN
+83        CLOSED      UNKNOWN
+84        CLOSED      UNKNOWN
+85        CLOSED      UNKNOWN
+No open ports found in the selected range.
 
-Scan completed in 0.07s with 1 open port(s).
+Scan completed in 0.51s with 0 open port(s).
 ```
 
 ## Requirements
