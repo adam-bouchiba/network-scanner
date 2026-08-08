@@ -1,63 +1,34 @@
 # Network Scanner
+
 [![CI](https://github.com/adam-bouchiba/network-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/adam-bouchiba/network-scanner/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-A fast multithreaded TCP port scanner written in Python.
+A fast, multithreaded TCP network scanner written in Python for host reconnaissance, service identification, and structured scan reporting.
 
-Network Scanner resolves hostnames, scans configurable TCP port ranges in parallel, identifies common services and displays a clear summary of the results.
+Built as a cybersecurity engineering project to explore low-level networking, concurrent execution, service enumeration, testing, and secure tooling practices.
 
-> This project was built for educational purposes and authorized security testing.
+---
 
 ## Features
 
-- Fast multithreaded TCP port scanning
-- IPv4 address and hostname resolution
-- Custom port selection
-- Port range parsing
+- Multithreaded TCP port scanning
+- IPv4 and hostname resolution
+- Custom ports and port ranges
 - Common service identification
-- Configurable connection timeout
-- Configurable worker threads
+- TCP service banner grabbing
+- Configurable timeout and worker count
 - Optional display of closed ports
-- Clear execution summary and scan duration
-- Installable command-line interface
+- Structured scan results with Python dataclasses
+- JSON report export
+- Automated unit testing with Pytest
+- Static analysis with Ruff
+- Type checking with Mypy
+- Continuous Integration with GitHub Actions
 
-## Demo
+---
 
-```text
-netscan localhost -p 75-85 --show-closed
-
-Target:      localhost
-Resolved IP: 127.0.0.1
-Ports:       11
-Workers:     50
-
-Scanning...
-
-PORT      STATUS      SERVICE
-----------------------------------
-75        CLOSED      UNKNOWN
-76        CLOSED      UNKNOWN
-77        CLOSED      UNKNOWN
-78        CLOSED      UNKNOWN
-79        CLOSED      FINGER
-80        CLOSED      HTTP
-81        CLOSED      HOSTS2-NS
-82        CLOSED      UNKNOWN
-83        CLOSED      UNKNOWN
-84        CLOSED      UNKNOWN
-85        CLOSED      UNKNOWN
-No open ports found in the selected range.
-
-Scan completed in 0.51s with 0 open port(s).
-```
-
-## Requirements
-
-- Python 3.10 or newer
-- Git
-
-No external Python dependency is currently required.
-
-## Installation
+## Quick Start
 
 Clone the repository:
 
@@ -68,156 +39,244 @@ cd network-scanner
 
 Create a virtual environment:
 
-### Windows PowerShell
-
-```powershell
+```bash
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
 ```
 
-### Linux and macOS
+Activate it.
+
+Windows:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Linux / macOS:
 
 ```bash
-python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Install the project in editable mode:
+Install the project:
 
 ```bash
 pip install -e .
 ```
 
-Verify the installation:
+You can now use:
+
+```bash
+netscan localhost
+```
+
+---
+
+## Usage
+
+Scan the default ports:
+
+```bash
+netscan localhost
+```
+
+Scan specific ports:
+
+```bash
+netscan localhost -p 22,80,443
+```
+
+Scan a range:
+
+```bash
+netscan localhost -p 1-1000
+```
+
+Combine ports and ranges:
+
+```bash
+netscan localhost -p 22,80,443,8000-8100
+```
+
+Enable banner grabbing:
+
+```bash
+netscan localhost -p 22,80,443 --banners
+```
+
+Export results to JSON:
+
+```bash
+netscan localhost -p 1-1000 --json scan.json
+```
+
+Display closed ports:
+
+```bash
+netscan localhost -p 20-100 --show-closed
+```
+
+Customize concurrency and timeout:
+
+```bash
+netscan localhost -p 1-1000 --workers 100 --timeout 0.3
+```
+
+View all options:
 
 ```bash
 netscan --help
 ```
 
-## Usage
+---
 
-### Scan the 1,000 default TCP ports
+## Example Output
 
-```bash
-netscan 127.0.0.1
+```text
+Target:      localhost
+Resolved IP: 127.0.0.1
+Ports:       7
+Workers:     50
+
+Scanning...
+
+PORT      STATUS      SERVICE         BANNER
+------------------------------------------------------------------------------
+22        CLOSED      SSH             -
+80        CLOSED      HTTP            -
+135       OPEN        MSRPC           -
+443       CLOSED      HTTPS           -
+445       OPEN        SMB             -
+3389      CLOSED      RDP             -
+8080      CLOSED      HTTP-ALT        -
+
+Scan completed in 2.56s with 2 open port(s).
 ```
 
-### Scan selected ports
+Actual results depend on the target and running services.
 
-```bash
-netscan example.com -p 22,80,443
+---
+
+## JSON Reports
+
+Scan results can be exported for further processing:
+
+```json
+{
+    "target": "localhost",
+    "ip_address": "127.0.0.1",
+    "duration_seconds": 0.12,
+    "ports_scanned": 3,
+    "open_ports_count": 2,
+    "open_ports": [
+        {
+            "port": 22,
+            "service": "SSH",
+            "banner": "SSH-2.0-OpenSSH_9.6",
+            "status": "open"
+        }
+    ]
+}
 ```
 
-### Scan a port range
+This makes scan results easy to integrate with scripts, dashboards, or security workflows.
 
-```bash
-netscan 192.168.1.10 -p 1-1000
-```
+---
 
-### Combine individual ports and ranges
-
-```bash
-netscan 192.168.1.10 -p 22,80,443,8000-8100
-```
-
-### Display closed ports
-
-```bash
-netscan localhost -p 75-85 --show-closed
-```
-
-### Change the timeout
-
-```bash
-netscan localhost -p 1-1000 --timeout 0.3
-```
-
-### Change the number of worker threads
-
-```bash
-netscan localhost -p 1-1000 --workers 100
-```
-
-### Combine options
-
-```bash
-netscan localhost -p 1-1000 -t 0.3 -w 100 --show-closed
-```
-
-## Command-line options
-
-| Option | Description | Default |
-|---|---|---:|
-| `target` | IPv4 address or hostname to scan | Required |
-| `-p`, `--ports` | Ports or ranges to scan | `1-1000` |
-| `-t`, `--timeout` | Connection timeout per port | `0.5` seconds |
-| `-w`, `--workers` | Maximum concurrent worker threads | `50` |
-| `--show-closed` | Display closed ports | Disabled |
-
-## Project structure
+## Architecture
 
 ```text
 network-scanner/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── src/
 │   └── netscan/
 │       ├── __init__.py
 │       ├── cli.py
+│       ├── models.py
 │       └── scanner.py
 ├── tests/
-├── .gitignore
+│   ├── test_cli.py
+│   ├── test_models.py
+│   └── test_scanner.py
+├── LICENSE
 ├── pyproject.toml
 └── README.md
 ```
 
-## How it works
+The project separates responsibilities between:
 
-For every selected port, the scanner attempts to establish a TCP connection using a Python socket.
+- `scanner.py` — networking and scanning logic
+- `models.py` — structured scan result representation
+- `cli.py` — command-line interface and report generation
+- `tests/` — automated unit tests
 
-A successful connection indicates that the port is open. Failed connection attempts are currently reported as closed.
+---
 
-To improve performance, port scans are distributed across a pool of worker threads using `ThreadPoolExecutor`.
+## Quality & Testing
 
-Service names are inferred from common port associations. This is not yet active service fingerprinting.
+Run the test suite:
 
-## Current limitations
+```bash
+pytest -v
+```
 
-- IPv4 only
-- TCP connect scanning only
-- Closed and filtered states are not yet distinguished
-- Service names are inferred from port numbers
-- No operating-system detection
-- No subnet or CIDR scanning
-- No JSON or CSV export yet
+Run static analysis:
 
-## Roadmap
+```bash
+ruff check .
+```
 
-- [x] TCP connect scanning
-- [x] Multithreaded port scanning
-- [x] Hostname resolution
-- [x] Port and range parsing
-- [x] Common service identification
-- [x] Installable CLI
-- [ ] JSON export
-- [ ] CSV export
-- [ ] Automated tests
-- [ ] GitHub Actions continuous integration
-- [ ] Banner grabbing
-- [ ] CIDR network scanning
-- [ ] Structured scan result model
-- [ ] Release v1.0.0
+Run type checking:
 
-## Responsible use
+```bash
+mypy src tests
+```
 
-Only scan systems that you own or systems for which you have explicit authorization.
+GitHub Actions automatically runs quality checks and tests on every push and pull request to `main`.
 
-Unauthorized scanning may violate organizational policies or applicable laws. The author is not responsible for misuse of this project.
+---
 
-## Author
+## Technical Concepts
 
-**Adam "Cobalt" Bouchiba**
+This project demonstrates practical use of:
 
-Cybersecurity Engineering Student at ECE Paris.
+- TCP sockets
+- DNS resolution
+- Concurrent network operations
+- `ThreadPoolExecutor`
+- Banner grabbing
+- CLI design with `argparse`
+- Python dataclasses
+- Type hints
+- JSON serialization
+- Unit testing and mocking
+- Continuous Integration
+
+---
+
+## Limitations
+
+This scanner intentionally focuses on TCP reconnaissance and does not currently provide:
+
+- UDP scanning
+- OS fingerprinting
+- Vulnerability detection
+- Advanced service fingerprinting
+- SYN / stealth scanning
+
+The goal is to keep the codebase understandable while maintaining a clean foundation for future experimentation.
+
+---
+
+## Responsible Use
+
+This project is intended for educational purposes and authorized security testing.
+
+Only scan systems you own or systems for which you have explicit permission to perform security testing.
+
+---
 
 ## License
 
-This project is intended to be released under the MIT License.
+Distributed under the MIT License. See `LICENSE` for details.
