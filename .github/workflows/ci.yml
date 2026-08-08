@@ -37,12 +37,17 @@ jobs:
           pip install -e .
           pip install pytest
 
-      - name: Run tests
-        run: pytest -v
-
-
       - name: Install Ruff
         run: pip install ruff
 
+      - name: Install Mypy
+        run: pip install mypy
+
       - name: Run Ruff
         run: ruff check .
+
+      - name: Run Mypy
+        run: mypy src tests
+
+      - name: Run tests
+        run: pytest -v

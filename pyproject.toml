@@ -24,3 +24,11 @@ select = [
     "F",
     "I",
 ]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src", "tests"]
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_configs = true
+no_implicit_optional = true

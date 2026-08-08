@@ -59,4 +59,4 @@ def test_scan_result_is_immutable() -> None:
     )
 
     with pytest.raises(FrozenInstanceError):
-        result.port = 80
+        result.port = 80  # type: ignore[misc]
