@@ -1,12 +1,10 @@
 import argparse
+import json
 import sys
 import time
-import json
-from netscan.models import ScanResult
 
+from netscan.models import ScanResult
 from netscan.scanner import (
-    get_service_name,
-    grab_banner,
     resolve_target,
     scan_ports,
 )

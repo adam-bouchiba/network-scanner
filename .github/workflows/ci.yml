@@ -39,3 +39,10 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff
+        run: ruff check .

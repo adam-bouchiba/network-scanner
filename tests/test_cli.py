@@ -1,8 +1,11 @@
 import argparse
 import json
+
 import pytest
-from netscan.models import ScanResult
+
 from netscan.cli import export_json, parse_ports
+from netscan.models import ScanResult
+
 
 def test_export_json_creates_expected_report(tmp_path) -> None:
     output_file = tmp_path / "scan.json"

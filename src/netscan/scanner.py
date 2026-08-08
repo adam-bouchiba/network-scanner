@@ -1,5 +1,6 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from netscan.models import ScanResult
 
 COMMON_SERVICES = {

@@ -11,6 +11,7 @@ from netscan.scanner import (
     scan_ports,
 )
 
+
 @patch("netscan.scanner.socket.create_connection")
 def test_grab_banner_returns_received_banner(
     mock_create_connection: MagicMock,
