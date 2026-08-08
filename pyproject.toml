@@ -4,9 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "network-scanner"
-version = "0.1.0"
-description = "Python Network Scanner"
+version = "1.0.0"
+description = "A fast multithreaded TCP network scanner written in Python."
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+
+authors = [
+    { name = "Adam Bouchiba" }
+]
+
+keywords = [
+    "cybersecurity",
+    "network-scanner",
+    "port-scanner",
+    "python",
+    "tcp",
+    "reconnaissance",
+]
 
 [project.scripts]
 netscan = "netscan.cli:main"
