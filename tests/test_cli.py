@@ -15,23 +15,23 @@ def test_export_json_creates_expected_report(tmp_path) -> None:
         target="localhost",
         ip_address="127.0.0.1",
         results=[
-    ScanResult(
-        port=22,
-        is_open=True,
-        service="SSH",
-        banner="SSH-2.0-OpenSSH_9.6",
-    ),
-    ScanResult(
-        port=80,
-        is_open=False,
-        service="HTTP",
-    ),
-    ScanResult(
-        port=443,
-        is_open=True,
-        service="HTTPS",
-    ),
-],
+            ScanResult(
+                port=22,
+                is_open=True,
+                service="SSH",
+                banner="SSH-2.0-OpenSSH_9.6",
+            ),
+            ScanResult(
+                port=80,
+                is_open=False,
+                service="HTTP",
+            ),
+            ScanResult(
+                port=443,
+                is_open=True,
+                service="HTTPS",
+            ),
+        ],
         duration=0.4567,
     )
 
@@ -45,19 +45,20 @@ def test_export_json_creates_expected_report(tmp_path) -> None:
     assert report["duration_seconds"] == 0.457
 
     assert report["open_ports"] == [
-    {
-        "port": 22,
-        "service": "SSH",
-        "banner": "SSH-2.0-OpenSSH_9.6",
-        "status": "open",
-    },
-    {
-        "port": 443,
-        "service": "HTTPS",
-        "banner": None,
-        "status": "open",
-    },
-]
+        {
+            "port": 22,
+            "service": "SSH",
+            "banner": "SSH-2.0-OpenSSH_9.6",
+            "status": "open",
+        },
+        {
+            "port": 443,
+            "service": "HTTPS",
+            "banner": None,
+            "status": "open",
+        },
+    ]
+
 
 def test_parse_single_ports() -> None:
     result = parse_ports("22,80,443")
@@ -116,5 +117,3 @@ def test_parse_ports_rejects_out_of_range_values(value: str) -> None:
 def test_parse_ports_rejects_invalid_formats(value: str) -> None:
     with pytest.raises(argparse.ArgumentTypeError):
         parse_ports(value)
-
-

@@ -27,9 +27,7 @@ def parse_ports(value: str) -> list[int]:
         part = raw_part.strip()
 
         if not part:
-            raise argparse.ArgumentTypeError(
-                "Une valeur de port est vide."
-            )
+            raise argparse.ArgumentTypeError("Une valeur de port est vide.")
 
         if "-" in part:
             try:
@@ -52,14 +50,10 @@ def parse_ports(value: str) -> list[int]:
             try:
                 ports.add(int(part))
             except ValueError as error:
-                raise argparse.ArgumentTypeError(
-                    f"Port invalide : {part}"
-                ) from error
+                raise argparse.ArgumentTypeError(f"Port invalide : {part}") from error
 
     if not ports:
-        raise argparse.ArgumentTypeError(
-            "Au moins un port doit être fourni."
-        )
+        raise argparse.ArgumentTypeError("Au moins un port doit être fourni.")
 
     if any(port < 1 or port > 65535 for port in ports):
         raise argparse.ArgumentTypeError(
@@ -111,19 +105,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-    "--banners",
-    action="store_true",
-    help="Tente de récupérer les bannières des services ouverts.",
+        "--banners",
+        action="store_true",
+        help="Tente de récupérer les bannières des services ouverts.",
     )
 
     parser.add_argument(
-    "--json",
-    dest="json_output",
-    metavar="FILE",
-    help="Exporte les résultats du scan dans un fichier JSON.",
-)
+        "--json",
+        dest="json_output",
+        metavar="FILE",
+        help="Exporte les résultats du scan dans un fichier JSON.",
+    )
 
     return parser
+
 
 def export_json(
     file_path: str,
@@ -135,11 +130,7 @@ def export_json(
     """
     Exporte les résultats du scan dans un fichier JSON.
     """
-    open_results = [
-        result
-        for result in results
-        if result.is_open
-    ]
+    open_results = [result for result in results if result.is_open]
 
     report = {
         "target": target,
@@ -147,14 +138,12 @@ def export_json(
         "duration_seconds": round(duration, 3),
         "ports_scanned": len(results),
         "open_ports_count": len(open_results),
-        "open_ports": [
-            result.to_dict()
-            for result in open_results
-        ],
+        "open_ports": [result.to_dict() for result in open_results],
     }
 
     with open(file_path, "w", encoding="utf-8") as json_file:
         json.dump(report, json_file, indent=4)
+
 
 def main() -> int:
     parser = build_parser()
@@ -195,7 +184,6 @@ def main() -> int:
     duration = time.perf_counter() - started_at
     open_ports = 0
 
-
     if arguments.banners:
         print(f"{'PORT':<10}{'STATUS':<12}{'SERVICE':<16}{'BANNER'}")
         print("-" * 78)
@@ -219,19 +207,12 @@ def main() -> int:
                 f"{banner}"
             )
         else:
-            print(
-                f"{result.port:<10}"
-                f"{result.status.upper():<12}"
-                f"{result.service}"
-            )
+            print(f"{result.port:<10}{result.status.upper():<12}{result.service}")
 
     if open_ports == 0:
         print("No open ports found in the selected range.")
 
-    print(
-        f"\nScan completed in {duration:.2f}s "
-        f"with {open_ports} open port(s)."
-    )
+    print(f"\nScan completed in {duration:.2f}s with {open_ports} open port(s).")
 
     if arguments.json_output:
         try:

@@ -166,7 +166,7 @@ Scan results can be exported for further processing:
     "ip_address": "127.0.0.1",
     "duration_seconds": 0.12,
     "ports_scanned": 3,
-    "open_ports_count": 2,
+    "open_ports_count": 1,
     "open_ports": [
         {
             "port": 22,

@@ -21,6 +21,7 @@ COMMON_SERVICES = {
     8080: "HTTP-ALT",
 }
 
+
 def get_service_name(port: int) -> str:
     """
     Retourne le service généralement associé à un port TCP.
@@ -32,6 +33,7 @@ def get_service_name(port: int) -> str:
         return socket.getservbyport(port, "tcp").upper()
     except OSError:
         return "UNKNOWN"
+
 
 def resolve_target(target: str) -> str:
     """
@@ -59,6 +61,7 @@ def scan_port(ip_address: str, port: int, timeout: float = 0.5) -> bool:
         result = client_socket.connect_ex((ip_address, port))
 
     return result == 0
+
 
 def grab_banner(
     ip_address: str,
@@ -105,6 +108,7 @@ def grab_banner(
     cleaned_banner = " ".join(decoded_banner.split())
 
     return cleaned_banner[:200] or None
+
 
 def scan_ports(
     ip_address: str,

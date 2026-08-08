@@ -34,9 +34,7 @@ def test_grab_banner_sends_http_head_request(
     mock_create_connection: MagicMock,
 ) -> None:
     mock_socket = mock_create_connection.return_value.__enter__.return_value
-    mock_socket.recv.return_value = (
-        b"HTTP/1.1 200 OK\r\nServer: nginx\r\n\r\n"
-    )
+    mock_socket.recv.return_value = b"HTTP/1.1 200 OK\r\nServer: nginx\r\n\r\n"
 
     result = grab_banner(
         ip_address="127.0.0.1",
@@ -62,7 +60,7 @@ def test_grab_banner_returns_none_on_connection_error(
         port=22,
     )
 
-    assert result is None   
+    assert result is None
 
 
 def test_get_service_name_for_known_port() -> None:
@@ -146,9 +144,7 @@ def test_scan_port_returns_false_when_connection_fails(
 def test_scan_ports_returns_sorted_results(
     mock_scan_port: MagicMock,
 ) -> None:
-    mock_scan_port.side_effect = (
-        lambda ip, port, timeout: port in {22, 443}
-    )
+    mock_scan_port.side_effect = lambda ip, port, timeout: port in {22, 443}
 
     results = scan_ports(
         ip_address="127.0.0.1",
